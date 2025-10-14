@@ -14,18 +14,18 @@ cardholder:
   hpa:
     cpu: 80
     enabled: true
-    maxReplicas: 15
+    maxReplicas: 10
   httpHealthCheckServiceMonitor:
     enabled: true
     targets:
     - name: healthcheck
       url: https://acropolis-pci.internal.mum1-pp.zetaapps.in/cardholder/health
 priorityClassName: acropolis-pci-priority
-  replicaCount: 2
+  replicaCount: 3
   resources:
     limits:
       cpu: 2000m
-      memory: 2000Mi
+      memory: 1500Mi
     requests:
       cpu: 1000m
       memory: 1500Mi
