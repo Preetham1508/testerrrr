@@ -1,0 +1,301 @@
+aether-god-controller:
+  priorityClassName: aether-priority
+  additionalPodAnnotations:
+    health.check.enable: 'true'
+    health.check.module: http_2xx
+    health.check.path: actuator/health
+    sidecar.istio.io/proxyCPU: 100m
+    sidecar.istio.io/proxyMemory: 128Mi
+    sidecar.istio.io/proxyMemoryLimit: 1024Mi
+  clusterName: aether
+  enabled: true
+  tolerations:
+    - effect: NoSchedule
+      key: schedule
+      operator: Equal
+      value: no-pods
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: schedule-on
+            operator: In
+            values:
+            - business-app-subnet
+          - key: eks.amazonaws.com/capacityType
+            operator: In
+            values:
+            - SPOT
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - aether-god-controller
+        topologyKey: kubernetes.io/hostname
+  topologySpreadConstraints:
+    enabled: true
+    additionalConfig:
+    - labelSelector:
+        matchLabels:
+          app.kubernetes.io/name: aether-god-controller
+      maxSkew: 1
+      topologyKey: "topology.kubernetes.io/zone"
+      whenUnsatisfiable: ScheduleAnyway
+  envProperties:
+    AETHER_BASE_URL: https://aether.zone.olympus.infra/aether/
+    APP_NAME: aether-god-controller
+    APP: aether-god-controller
+    CRUX-LLT_CLUSTER_NAME: aether
+    CRUX-LLT_GOD_OAUTH_APP-AUTH-PROFILE-ID: vault:secrets/data/cluster/aether/aether-god-controller/tenants/0/auth#crux-llt.god.oauth.app-auth-profile-id
+    CRUX-LLT_GOD_OAUTH_APP-PRIVATE-KEY: vault:secrets/data/cluster/aether/aether-god-controller/tenants/0/auth#crux-llt.god.oauth.app-private-key
+    CRUX-LLT_GOD_OAUTH_APP-PUBLIC-KEY: vault:secrets/data/cluster/aether/aether-god-controller/tenants/0/auth#crux-llt.god.oauth.app-public-key
+    CRUX-LLT_GOD_OAUTH_APP-RESOURCE-CERT: vault:secrets/data/cluster/aether/aether-god-controller/tenants/0/auth#crux-llt.god.oauth.app-resource-cert
+    CRUX-LLT_GOD_OAUTH_CLIENT-ID: vault:secrets/data/cluster/aether/aether-god-controller/tenants/0/auth#crux-llt.god.oauth.client-id
+    CRUX-LLT_GOD_OAUTH_CLIENT-SECRET: vault:secrets/data/cluster/aether/aether-god-controller/tenants/0/auth#crux-llt.god.oauth.client-secret
+    CRUX-LLT_GOD_OAUTH_DOMAIN-ID: vault:secrets/data/cluster/aether/aether-god-controller/tenants/0/auth#crux-llt.god.oauth.domain-id
+    CRUX-LLT_GOD_OAUTH_SCOPE: vault:secrets/data/cluster/aether/aether-god-controller/tenants/0/auth#crux-llt.god.oauth.scope
+    CRUX-LLT_TOKEN_BUFFER_TIME: '2700000'
+    DELTA_V2_ENCRYPTION_BASE64SECRET: vault:secrets/data/zone/common/delta#delta.v2.encryption.base64Secret
+    DELTA_V2_URL: vault:secrets/data/zone/common/delta#delta.v2.url
+    DELTA_BASE_URL : https://elenchos.zone.olympus.infra/delta/
+    DELTA_CLIENT_READ_TIMEOUT: 10
+    DELTA_CLIENT_CALL_TIMEOUT: 10
+    ENVIRONMENT: preprod
+    GENESIS_BASE_URL: https://aether.zone.olympus.infra/genesis-backend/
+    JMX_PORT: 63121
+    JMX_PROMETHEUS_JAVAAGENT_CONFIG_FILE: /prometheus/jmx-exporter-config.yaml
+    JMX_PROMETHEUS_JAVAAGENT_METRICS_PORT: 44444
+    JMX_RMI_PORT: 33333
+    JAVA_EXTRA_OPTS: -Xmx2048M -Xloggc:/logs/aether-god-controller/gc.log -XX:+CrashOnOutOfMemoryError
+    KINESIS_ACCESSKEY: vault:secrets/data/zone/common/logging#KINESIS_ACCESSKEY
+    KINESIS_PUBSUB_REGION: vault:secrets/data/zone/common/logging#KINESIS_REGION
+    KINESIS_REGION: vault:secrets/data/zone/common/logging#KINESIS_REGION
+    KINESIS_SECRETKEY: vault:secrets/data/zone/common/logging#KINESIS_SECRETKEY
+    PROTEUS_ENDPOINT: https://aura.zone.olympus.infra/proteus/zeta.in
+    SSO_BASE_URL: https://cipher.zone.olympus.infra/sso/
+    javaXms: 2048M
+    javaXmx: 2048M
+    CONFIG_SUBSCRIPTIONORCHESTRATORBASEURL: vault:secrets/data/cluster/aether/aether-god-controller/application#config.subscriptionOrchestratorBaseUrl
+    CONFIG_SUBSCRIPTIONORCHESTRATORHMACSECRET: vault:secrets/data/cluster/aether/aether-god-controller/application#config.subscriptionOrchestratorHmacSecret
+    EURUS_BASE_URL: https://cipher.zone.olympus.infra/proteus/
+    CERTSTORE_PROTEUS_ENDPOINT: https://cipher.zone.olympus.infra/proteus/zeta.in
+    SESSIONS_PROTEUS_ENDPOINT: https://cipher.zone.olympus.infra/proteus/zeta.in
+    logging.level.root: ERROR
+    logging.level.in.zeta.PubSubLogger: INFO
+    HTTP_KEEP_ALIVE_DURATION_SECONDS: 180
+    AETHER_CLIENT_READ_TIMEOUT: 6
+    AETHER_CLIENT_CALL_TIMEOUT: 6
+    SPRING_LIFECYCLE_TIMEOUT-PER-SHUTDOWN-PHASE: 60s
+    SERVER_SHUTDOWN: graceful
+  envs:
+  - name: environmentName
+    value: production
+  heraclesRouteSpec:
+    enabled: false
+  hpa:
+    cpu: 40
+    enabled: true
+    maxReplicas: 2
+    minReplicas: 2
+    behavior:
+      scaleUp:
+        policies:
+          - periodSeconds: 15
+            type: Pods
+            value: 4
+        selectPolicy: Max
+        stabilizationWindowSeconds: 60
+      scaleDown:
+        policies:
+          - periodSeconds: 300
+            type: Percent
+            value: 10
+        selectPolicy: Min
+        stabilizationWindowSeconds: 600
+    mem: false
+  olympusLabels:
+    olympusCluster: Aether
+    olympusClusterBU: BankingSaaS
+    olympusClusterTeam: Aether
+    olympusZone: hbl-aws-aps1-zeta-nonpcidss-1-uat-eks
+    olympusZoneEnv: production
+  replicaCount: 2
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 4030Mi
+    requests:
+      cpu: 500m
+      memory: 3360Mi
+  service:
+    annotations:
+      ingress.kubernetes.io/service-upstream: 'true'
+      konghq.com/preserve-host: 'false'
+      networking.istio.io/exportTo: '.,zone-traffic'
+    healthCheckPath: /actuator/health
+    livenessProbeInitialDelaySeconds: 120
+    readinessProbeInitialDelaySeconds: 120
+    targetPort: 8080
+  serviceAccountName: aether-god-controller
+  serviceMonitor:
+    enabled: true
+    monitors:
+    - interval: 60s
+      labels:
+        prometheus: zone-monitoring
+      matchLabels:
+        app.kubernetes.io/name: aether-god-controller
+      name: jmxmetrics
+      namespace: aether
+      path: /prometheus
+      port: http
+      scrapeTimeout: 30s
+  volumeMounts:
+  - configMapName: jmx-exporter-config
+    fileContent: "startDelaySeconds: 0\nlowercaseOutputName: true\nlowercaseOutputLabelNames:\
+      \ false\nwhitelistObjectNames: []\nblacklistObjectNames: []\nrules:\n  - pattern:\
+      \ \".*\""
+    fileName: jmx-exporter-config.yaml
+    mountPath: /prometheus/
+    name: jmx-exporter-config
+  - configMapName: logolympus
+    fileContent: |
+      <?xml version="1.0" encoding="UTF-8"?>
+      <Configuration monitorInterval="30" packages="to.talk.common" status="ERROR">
+        <Appenders>
+            <Kinesis name="LogKinesisAppender"/>
+            <Kinesis name="MetricKinesisAppender"/>
+            <RollingFile name="LogRollingFileAppender" fileName="/logs/${sys:user.name}/${sys:user.name}.log"
+                        filePattern="/logs/${sys:user.name}/${sys:user.name}-%i.log">
+                <PatternLayout pattern="%d %r [%t] %-5p [%c{1.}] %X - %m %throwable%n"/>
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+                <DefaultRolloverStrategy max="2"/>
+            </RollingFile>
+            <RollingFile name="MetricRollingFileAppender" fileName="/logs/${sys:user.name}/${sys:user.name}-metric.log"
+                        filePattern="/logs/${sys:user.name}/${sys:user.name}-metric-%i.log">
+                <PatternLayout Pattern="%d %r [%t] %-5p [%c] %X - %m %throwable%n"/>
+                <SizeBasedTriggeringPolicy size="100 MB"/>
+                <DefaultRolloverStrategy max="2"/>
+            </RollingFile>
+            <Console name="console" target="SYSTEM_OUT">
+                <JsonTemplateLayout eventTemplateUri="file:///app/log4jJsonLogFormat.json"/>
+            </Console>
+        </Appenders>
+        <Loggers>
+            <Logger name="metric.olympus.metrics.collectors.LogStreamCollector" level="ERROR" additivity="false">
+                <AppenderRef ref="MetricRollingFileAppender"/>
+                <AppenderRef ref="MetricKinesisAppender"/>
+            </Logger>
+            <logger name="in.zeta.PubSubLogger" level="INFO" additivity="false">
+                <AppenderRef ref="LogKinesisAppender"/>
+                <AppenderRef ref="LogRollingFileAppender"/>
+            </logger>
+            <logger name="in.zeta.springframework.boot.commons.logging.HttpLogger" level="ERROR" additivity="false">
+              <AppenderRef ref="console"/>
+              <AppenderRef ref="LogRollingFileAppender"/>
+            </logger>
+            <Root level="ERROR">
+                <AppenderRef ref="console"/>
+                <AppenderRef ref="LogRollingFileAppender"/>
+            </Root>
+        </Loggers>
+      </Configuration>
+    fileName: log4Olympus2.xml
+    mountPath: /app/log4Olympus2.xml
+    name: logolympus
+    subPath: log4Olympus2.xml
+  prometheus:
+    prometheus_rule:
+      enabled: false
+      labels: {}
+      ops_rules:
+        enabled: false
+        replicas_unavailable:
+          enabled: false
+        availablePods_NE_deployedPod:
+          enabled: false
+        image_pull_backoff:
+          enabled: false
+        container_cpu_usage:
+          enabled: false
+        container_memory_usage:
+          enabled: false
+        container_restarted_multiple_times:
+          enabled: false
+        container_killed:
+          enabled: false
+        pod_crashLooping:
+          enabled: false
+        pod_failed:
+          enabled: false
+        container_memory_request_high_usage:
+          enabled: false
+        container_memory_request_low_usage:
+          enabled: false
+        container_network_error:
+          enabled: false
+        container_cpu_throttled:
+          enabled: false
+        container_OOM_killed:
+          enabled: false
+        container_ephemeral_storage:
+          enabled: false
+      common_rules:
+        enabled: false
+        gc_alert:
+          enabled: false
+        jvm_threads_current_alert:
+          enabled: false
+        service_uptime:
+          enabled: false
+        service_success_percentage:
+          enabled: false
+        target_down:
+          enabled: false
+        percentage_of_pods:
+          enabled: false
+      health_check:
+        enabled: false
+        probe:
+          enabled: false
+        up:
+          enabled: false
+        absent:
+          enabled: false
+          probe:
+            enabled: false
+          up:
+            enabled: false
+      springboot_rules:
+        enabled: false
+        jvm_memory: 
+          enabled: false
+        jvm_memory_warn: {}
+        jvm_memory_critical: {}
+        thread_counts:
+          enabled: false
+          warn: {}
+          critical: {}
+        jvm_committed_memory:
+          enabled: false
+          warn: {}
+          critical: {}
+        jvm_cpu_warn:
+          enabled: false
+        jvm_cpu_critical:
+          enabled: false
+        jvm_high_requests:
+          enabled: false
+        jvm_high_latency:
+          enabled: false
+        jvm_cpu:
+          enabled: false
+          percentage: 60
+        http4xx:
+          enabled: false
+        http5xx:
+          enabled: false
